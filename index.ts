@@ -33,8 +33,6 @@ const server = Bun.serve({
 
     "/:id/:sheet": async (request) => {
       const { id, sheet: sheetParam } = request.params;
-        "/:id/:sheet": async (request) => {
-      const { id, sheet: sheetParam } = request.params;
       
       // === ADD THIS: Validate sheet ID is allowed ===
       if (ALLOWED_SHEET_IDS.length > 0 && !ALLOWED_SHEET_IDS.includes(id)) {
