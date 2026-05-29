@@ -2,10 +2,18 @@ import Bun, { redis, sql } from "bun";
 
 const GOOGLE_API_KEY = process.env.GOOGLE_API_KEY;
 
+// === ADD THIS: List of allowed spreadsheet IDs ===
+const ALLOWED_SHEET_IDS = (process.env.ALLOWED_SHEET_IDS || "").split(",").map(id => id.trim()).filter(id => id);
+
+// If no sheets configured, show warning
+if (ALLOWED_SHEET_IDS.length === 0) {
+  console.warn("⚠️  WARNING: ALLOWED_SHEET_IDS environment variable is not set or empty. No sheets are allowed!");
+}
+// === END: Allowed sheets configuration ===
+
 const ALLOWED_QUERY_PARAMETERS = {
   raw: ["true", "false"],
 };
-
 // In-memory cache for pending requests to prevent thundering herd
 const pendingRequests = new Map<string, Promise<string>>();
 
@@ -25,6 +33,18 @@ const server = Bun.serve({
 
     "/:id/:sheet": async (request) => {
       const { id, sheet: sheetParam } = request.params;
+        "/:id/:sheet": async (request) => {
+      const { id, sheet: sheetParam } = request.params;
+      
+      // === ADD THIS: Validate sheet ID is allowed ===
+      if (ALLOWED_SHEET_IDS.length > 0 && !ALLOWED_SHEET_IDS.includes(id)) {
+        return error(
+          `Access denied. This spreadsheet ID is not authorized. If you believe this is a mistake, check your ALLOWED_SHEET_IDS environment variable.`,
+          403
+        );
+      }
+      // === END: Validation ===
+      
       const url = new URL(request.url);
 
       // Random cache duration between 30-60 seconds to prevent cache stampedes
